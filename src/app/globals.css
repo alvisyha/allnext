@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-primary: #1a1a2d; /* ebony black */
+  --color-brand-secondary: #6c63ff; /* soft indigo accent */
+  --color-brand-success: #10b981; /* emerald */
+  --color-brand-danger: #ef4444; /* rose */
+  --color-brand-warning: #f59e0b; /* amber */
+  --color-brand-bg: #ffffff; /* white bg */
+  --color-brand-surface: #f8f9fa; /* light grey cards */
+  --color-brand-surface-hover: #f1f3f5;
+  --color-brand-border: #e9ecef; /* thin border */
+  --color-brand-text: #1a1a2d; /* dark text */
+  --color-brand-muted: #6b7280; /* grey text */
+  
+  --font-sans: var(--font-poppins), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --foreground-rgb: 26, 26, 45;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 250, 250, 252;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+
+/* Custom scrollbars for clean minimal UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Glassmorphism helpers for clean modern feel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(26, 26, 45, 0.05);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(26, 26, 45, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
 }
