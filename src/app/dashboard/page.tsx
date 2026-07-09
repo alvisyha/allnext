@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  CheckSquare, 
-  Flame, 
-  Wallet, 
+import {
+  CheckSquare,
+  Flame,
+  Wallet,
   Calendar,
   Sparkles,
   ArrowUpRight,
@@ -30,7 +30,7 @@ export default function DashboardPage() {
   // App states
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
-  
+
   // Dashboard indicators
   const [stats, setStats] = useState({
     activeTasks: 0,
@@ -38,7 +38,7 @@ export default function DashboardPage() {
     balance: 0,
     eventsToday: 0
   })
-  
+
   const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([])
   const [chartData, setChartData] = useState<any[]>([])
 
@@ -76,7 +76,7 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async (userId: string) => {
     try {
       setLoading(true)
-      
+
       // 1. Fetch active tasks count
       const { count: activeTasksCount } = await supabase
         .from('tasks')
@@ -90,7 +90,7 @@ export default function DashboardPage() {
         .from('habit_logs')
         .select('*, habits(user_id)')
         .eq('completed_date', todayStr)
-      
+
       const loggedTodayCount = habitLogsToday?.filter(log => log.habits && log.habits.user_id === userId).length || 0
 
       // 3. Fetch net balance (income - expense)
@@ -98,7 +98,7 @@ export default function DashboardPage() {
         .from('transactions')
         .select('*')
         .eq('user_id', userId)
-      
+
       let balance = 0
       if (transactions) {
         const totalIncome = transactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + Number(curr.amount), 0)
@@ -190,7 +190,7 @@ export default function DashboardPage() {
         const d = subDays(new Date(), i)
         const dateStr = format(d, 'yyyy-MM-dd')
         const displayStr = format(d, 'dd MMM')
-        
+
         let dailyIncome = 0
         let dailyExpense = 0
         if (transactions) {
@@ -274,7 +274,7 @@ export default function DashboardPage() {
     try {
       const startDateTimeString = `${eventForm.date}T${eventForm.startTime}:00`
       const endDateTimeString = eventForm.endTime ? `${eventForm.date}T${eventForm.endTime}:00` : null
-      
+
       const { error } = await supabase.from('events').insert({
         user_id: user.id,
         title: eventForm.title,
@@ -356,13 +356,7 @@ export default function DashboardPage() {
               icon={<CheckSquare size={20} />}
               variant="primary"
             />
-            <StatsCard
-              title="Habit Hari Ini"
-              value={stats.habitsCompletedToday}
-              subtext="Sudah diceklis hari ini"
-              icon={<Flame size={20} />}
-              variant="warning"
-            />
+
             <StatsCard
               title="Saldo Finansial"
               value={formatRupiah(stats.balance)}
@@ -376,6 +370,13 @@ export default function DashboardPage() {
               subtext="Agenda kerja & pertemuan"
               icon={<Calendar size={20} />}
               variant="secondary"
+            />
+            <StatsCard
+              title="Habit Hari Ini"
+              value={stats.habitsCompletedToday}
+              subtext="Sudah diceklis hari ini"
+              icon={<Flame size={20} />}
+              variant="warning"
             />
           </div>
 
@@ -497,8 +498,8 @@ export default function DashboardPage() {
             value={txForm.type}
             onChange={(e) => {
               const newType = e.target.value
-              setTxForm({ 
-                ...txForm, 
+              setTxForm({
+                ...txForm,
                 type: newType,
                 category: newType === 'income' ? 'Gaji' : 'Makanan'
               })

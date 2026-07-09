@@ -77,7 +77,7 @@ export default function LoginPage() {
         <div className="flex items-center gap-2 mb-6">
           <Sparkles className="w-5 h-5 text-brand-secondary" />
           <h2 className="text-lg font-bold text-brand-primary">
-            {isRegister ? 'Buat Akun Baru' : 'Selamat Datang Kembali'}
+            {isRegister ? 'Buat Akun Baru' : 'Selamat Datang'}
           </h2>
         </div>
 

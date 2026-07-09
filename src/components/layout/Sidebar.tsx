@@ -3,12 +3,12 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { 
-  LayoutDashboard, 
-  CheckSquare, 
-  Flame, 
-  Wallet, 
-  Calendar, 
+import {
+  LayoutDashboard,
+  CheckSquare,
+  Flame,
+  Wallet,
+  Calendar,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -28,9 +28,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   const menuItems = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Tugas & Pengingat', href: '/dashboard/tasks', icon: CheckSquare },
-    { name: 'Habit Tracker', href: '/dashboard/habits', icon: Flame },
     { name: 'Keuangan', href: '/dashboard/finance', icon: Wallet },
     { name: 'Planner & Kalender', href: '/dashboard/planner', icon: Calendar },
+    { name: 'Habit Tracker', href: '/dashboard/habits', icon: Flame },
   ]
 
   const handleLogout = async () => {
@@ -40,7 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
   }
 
   return (
-    <aside 
+    <aside
       className={`fixed top-0 left-0 h-full z-45 bg-white border-r border-brand-border flex flex-col justify-between transition-all duration-300
         ${isOpen ? 'w-64' : 'w-20'}
       `}
@@ -58,7 +58,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
               </span>
             )}
           </div>
-          <button 
+          <button
             onClick={() => setIsOpen(!isOpen)}
             className="hidden md:flex p-1.5 rounded-lg border border-brand-border text-neutral-400 hover:bg-neutral-50 hover:text-brand-text transition-colors duration-200"
           >
@@ -71,14 +71,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
-            
+
             return (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`flex items-center gap-3.5 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                  ${isActive 
-                    ? 'bg-neutral-100 text-brand-primary' 
+                  ${isActive
+                    ? 'bg-neutral-100 text-brand-primary'
                     : 'text-brand-muted hover:bg-neutral-50 hover:text-brand-primary'
                   }
                 `}
