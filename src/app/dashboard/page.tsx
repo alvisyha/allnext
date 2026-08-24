@@ -15,7 +15,7 @@ import {
 import { createClient } from '@/lib/supabase/client'
 import { StatsCard } from '@/components/dashboard/StatsCard'
 import { QuickActions } from '@/components/dashboard/QuickActions'
-import { RecentActivity, ActivityItem } from '@/components/dashboard/RecentActivity'
+import { MiniCalendar } from '@/components/dashboard/MiniCalendar'
 import { MiniFinanceChart } from '@/components/dashboard/MiniFinanceChart'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'
@@ -39,7 +39,6 @@ export default function DashboardPage() {
     eventsToday: 0
   })
 
-  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([])
   const [chartData, setChartData] = useState<any[]>([])
 
   // Modal control states
@@ -123,68 +122,7 @@ export default function DashboardPage() {
         eventsToday: eventsTodayCount || 0
       })
 
-      // 5. Generate recent activities feed based on latest items
-      const activitiesList: ActivityItem[] = []
-
-      // Task activities
-      const { data: latestTasks } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3)
-
-      latestTasks?.forEach(t => {
-        activitiesList.push({
-          id: `task-${t.id}`,
-          title: t.is_completed ? `Menyelesaikan tugas: ${t.title}` : `Menambahkan tugas: ${t.title}`,
-          description: `Prioritas: ${t.priority.toUpperCase()}`,
-          time: format(new Date(t.created_at), 'dd MMM yyyy, HH:mm'),
-          type: 'task'
-        })
-      })
-
-      // Transaction activities
-      const { data: latestTransactions } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3)
-
-      latestTransactions?.forEach(t => {
-        activitiesList.push({
-          id: `tx-${t.id}`,
-          title: t.type === 'income' ? `Menerima pemasukan` : `Mencatat pengeluaran`,
-          description: `${t.category} - Rp ${Number(t.amount).toLocaleString('id-ID')}`,
-          time: format(new Date(t.created_at), 'dd MMM yyyy, HH:mm'),
-          type: 'finance'
-        })
-      })
-
-      // Event activities
-      const { data: latestEvents } = await supabase
-        .from('events')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(3)
-
-      latestEvents?.forEach(e => {
-        activitiesList.push({
-          id: `evt-${e.id}`,
-          title: `Agenda dijadwalkan: ${e.title}`,
-          description: `Tipe: ${e.type}`,
-          time: format(new Date(e.created_at), 'dd MMM yyyy, HH:mm'),
-          type: 'event'
-        })
-      })
-
-      // Sort activities by date desc
-      activitiesList.sort((a, b) => b.time.localeCompare(a.time))
-      setRecentActivities(activitiesList.slice(0, 5))
-
-      // 6. Generate 7 Days Cashflow Chart Data
+      // 5. Generate 7 Days Cashflow Chart Data
       const chartPoints = []
       for (let i = 6; i >= 0; i--) {
         const d = subDays(new Date(), i)
@@ -380,11 +318,11 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Grid Layout for Charts & Actions */}
+          {/* Grid Layout for Calendar & Actions */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Chart Area */}
+            {/* Calendar Area */}
             <div className="lg:col-span-2">
-              <MiniFinanceChart data={chartData} />
+              <MiniCalendar />
             </div>
 
             {/* Quick Actions Component */}
@@ -398,11 +336,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Recent activities section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-3">
-              <RecentActivity activities={recentActivities} />
-            </div>
+          {/* Arus Kas section */}
+          <div className="grid grid-cols-1 gap-6">
+            <MiniFinanceChart data={chartData} />
           </div>
         </>
       )}
