@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { StatsCard } from '@/components/dashboard/StatsCard'
-import { QuickActions } from '@/components/dashboard/QuickActions'
+
 import { MiniCalendar } from '@/components/dashboard/MiniCalendar'
 import { MiniFinanceChart } from '@/components/dashboard/MiniFinanceChart'
 import { Modal } from '@/components/ui/Modal'
@@ -293,6 +293,8 @@ export default function DashboardPage() {
               subtext="Menunggu untuk diselesaikan"
               icon={<CheckSquare size={20} />}
               variant="primary"
+              onQuickAction={() => setIsTaskModalOpen(true)}
+              quickActionLabel="Tambah Tugas"
             />
 
             <StatsCard
@@ -301,6 +303,8 @@ export default function DashboardPage() {
               subtext="Total sisa kas Anda"
               icon={<Wallet size={20} />}
               variant="success"
+              onQuickAction={() => setIsTxModalOpen(true)}
+              quickActionLabel="Catat Keuangan"
             />
             <StatsCard
               title="Jadwal Hari Ini"
@@ -308,6 +312,8 @@ export default function DashboardPage() {
               subtext="Agenda kerja & pertemuan"
               icon={<Calendar size={20} />}
               variant="secondary"
+              onQuickAction={() => setIsEventModalOpen(true)}
+              quickActionLabel="Agenda Baru"
             />
             <StatsCard
               title="Habit Hari Ini"
@@ -315,25 +321,14 @@ export default function DashboardPage() {
               subtext="Sudah diceklis hari ini"
               icon={<Flame size={20} />}
               variant="warning"
+              onQuickAction={() => setIsHabitModalOpen(true)}
+              quickActionLabel="Kebiasaan Baru"
             />
           </div>
 
-          {/* Grid Layout for Calendar & Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Calendar Area */}
-            <div className="lg:col-span-2">
-              <MiniCalendar />
-            </div>
-
-            {/* Quick Actions Component */}
-            <div>
-              <QuickActions
-                onAddTask={() => setIsTaskModalOpen(true)}
-                onAddTransaction={() => setIsTxModalOpen(true)}
-                onAddEvent={() => setIsEventModalOpen(true)}
-                onAddHabit={() => setIsHabitModalOpen(true)}
-              />
-            </div>
+          {/* Calendar Section */}
+          <div>
+            <MiniCalendar />
           </div>
 
           {/* Arus Kas section */}

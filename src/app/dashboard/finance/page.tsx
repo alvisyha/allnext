@@ -213,7 +213,7 @@ export default function FinancePage() {
           <h2 className="text-xl font-bold text-brand-primary tracking-tight">Manajemen Finansial</h2>
           <p className="text-sm text-brand-muted mt-1">Pantau arus kas harian Anda, kelola pengeluaran, dan catat pemasukan Anda secara praktis.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} size="sm" className="self-start cursor-pointer">
+        <Button onClick={() => setIsModalOpen(true)} size="sm" className="self-end sm:self-start cursor-pointer">
           <Plus size={16} className="mr-1.5" /> Catat Transaksi
         </Button>
       </div>
@@ -296,53 +296,82 @@ export default function FinancePage() {
                   </div>
                 </div>
 
-                {/* Table or logs list */}
+                {/* Table or logs list — grouped by date */}
                 {getFilteredTransactions().length === 0 ? (
                   <div className="py-16 flex flex-col items-center justify-center text-center">
                     <span className="text-3xl mb-2">💸</span>
                     <p className="text-sm text-brand-muted">Belum ada catatan keuangan yang cocok.</p>
                   </div>
                 ) : (
-                  <div className="flex flex-col gap-2 overflow-y-auto max-h-[520px]">
-                    {getFilteredTransactions().map((t) => (
-                      <div 
-                        key={t.id}
-                        className="flex items-center justify-between p-4 rounded-xl border border-brand-border hover:bg-neutral-50/40 transition-colors text-left"
-                      >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          {/* Indicator badge */}
-                          <div className={`p-2.5 rounded-xl border shrink-0
-                            ${t.type === 'income' ? 'bg-emerald-50 border-emerald-100 text-brand-success' : 'bg-red-50 border-red-100 text-brand-danger'}
-                          `}>
-                            {t.type === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
-                          </div>
-                          
-                          <div className="min-w-0">
-                            <h4 className="text-sm font-semibold text-brand-primary truncate">
-                              {t.description || t.category}
-                            </h4>
-                            <span className="text-xs text-brand-muted mt-0.5 block">
-                              {t.category} • {format(new Date(t.date), 'dd MMM yyyy')}
-                            </span>
-                          </div>
-                        </div>
+                  <div className="flex flex-col overflow-y-auto max-h-[520px]">
+                    {(() => {
+                      // Group transactions by date
+                      const grouped: { [key: string]: any[] } = {}
+                      getFilteredTransactions().forEach((t) => {
+                        const dateKey = t.date
+                        if (!grouped[dateKey]) grouped[dateKey] = []
+                        grouped[dateKey].push(t)
+                      })
+                      const dateKeys = Object.keys(grouped)
 
-                        <div className="flex items-center gap-4 shrink-0">
-                          <span className={`text-sm font-bold
-                            ${t.type === 'income' ? 'text-brand-success' : 'text-brand-danger'}
-                          `}>
-                            {t.type === 'income' ? '+' : '-'} {formatRupiah(Number(t.amount))}
-                          </span>
-                          
-                          <button 
-                            onClick={() => handleDeleteTransaction(t.id)}
-                            className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-brand-danger transition-colors cursor-pointer"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                      return dateKeys.map((dateKey, groupIdx) => (
+                        <div key={dateKey}>
+                          {/* Date separator */}
+                          {groupIdx > 0 && (
+                            <div className="border-t border-brand-border my-3" />
+                          )}
+                          {/* Date header */}
+                          <div className="flex items-center gap-2 mb-2 mt-1">
+                            <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wider">
+                              {format(new Date(dateKey), 'EEEE, dd MMMM yyyy')}
+                            </span>
+                            <div className="flex-1 h-px bg-brand-border/60" />
+                          </div>
+                          {/* Transaction items for this date */}
+                          <div className="flex flex-col gap-2">
+                            {grouped[dateKey].map((t) => (
+                              <div 
+                                key={t.id}
+                                className="flex items-center justify-between p-4 rounded-xl border border-brand-border hover:bg-neutral-50/40 transition-colors text-left"
+                              >
+                                <div className="flex items-center gap-3.5 min-w-0">
+                                  {/* Indicator badge */}
+                                  <div className={`p-2.5 rounded-xl border shrink-0
+                                    ${t.type === 'income' ? 'bg-emerald-50 border-emerald-100 text-brand-success' : 'bg-red-50 border-red-100 text-brand-danger'}
+                                  `}>
+                                    {t.type === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                                  </div>
+                                  
+                                  <div className="min-w-0">
+                                    <h4 className="text-sm font-semibold text-brand-primary truncate">
+                                      {t.description || t.category}
+                                    </h4>
+                                    <span className="text-xs text-brand-muted mt-0.5 block">
+                                      {t.category}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-4 shrink-0">
+                                  <span className={`text-sm font-bold
+                                    ${t.type === 'income' ? 'text-brand-success' : 'text-brand-danger'}
+                                  `}>
+                                    {t.type === 'income' ? '+' : '-'} {formatRupiah(Number(t.amount))}
+                                  </span>
+                                  
+                                  <button 
+                                    onClick={() => handleDeleteTransaction(t.id)}
+                                    className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-brand-danger transition-colors cursor-pointer"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    })()}
                   </div>
                 )}
               </Card>
