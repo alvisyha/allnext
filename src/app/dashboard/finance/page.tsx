@@ -7,30 +7,30 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
-import { 
-  Plus, 
-  Trash2, 
-  TrendingUp, 
-  TrendingDown, 
-  DollarSign, 
-  Filter, 
+import {
+  Plus,
+  Trash2,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Filter,
   FolderPlus,
   ArrowUpRight,
   ArrowDownLeft,
   PieChart as PieIcon
 } from 'lucide-react'
-import { 
-  ResponsiveContainer, 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  CartesianGrid, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  Legend 
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
 } from 'recharts'
 import { format, subDays } from 'date-fns'
 
@@ -66,8 +66,9 @@ export default function FinancePage() {
     ],
     expense: [
       { value: 'Makanan', label: 'Makanan' },
-      { value: 'Transport', label: 'Transport' },
+      { value: 'Bensin', label: 'Bensin' },
       { value: 'Belanja', label: 'Belanja' },
+      { value: 'Online', label: 'Online' },
       { value: 'Tagihan', label: 'Tagihan' },
       { value: 'Hiburan', label: 'Hiburan' },
       { value: 'Lainnya', label: 'Lainnya' }
@@ -86,7 +87,7 @@ export default function FinancePage() {
         .eq('user_id', userId)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
-      
+
       if (error) throw error
       if (data) setTransactions(data)
     } catch (err) {
@@ -173,7 +174,7 @@ export default function FinancePage() {
   const getCategoryBreakdown = () => {
     const expenses = transactions.filter(t => t.type === 'expense')
     const categoryTotals: { [key: string]: number } = {}
-    
+
     expenses.forEach(ex => {
       categoryTotals[ex.category] = (categoryTotals[ex.category] || 0) + Number(ex.amount)
     })
@@ -191,7 +192,7 @@ export default function FinancePage() {
       const d = subDays(new Date(), i)
       const dateStr = format(d, 'yyyy-MM-dd')
       const displayStr = format(d, 'dd MMM')
-      
+
       const dailyTransactions = transactions.filter(t => t.date === dateStr)
       const dailyIncome = dailyTransactions.filter(t => t.type === 'income').reduce((acc, curr) => acc + Number(curr.amount), 0)
       const dailyExpense = dailyTransactions.filter(t => t.type === 'expense').reduce((acc, curr) => acc + Number(curr.amount), 0)
@@ -330,7 +331,7 @@ export default function FinancePage() {
                           {/* Transaction items for this date */}
                           <div className="flex flex-col gap-2">
                             {grouped[dateKey].map((t) => (
-                              <div 
+                              <div
                                 key={t.id}
                                 className="flex items-center justify-between p-4 rounded-xl border border-brand-border hover:bg-neutral-50/40 transition-colors text-left"
                               >
@@ -341,7 +342,7 @@ export default function FinancePage() {
                                   `}>
                                     {t.type === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
                                   </div>
-                                  
+
                                   <div className="min-w-0">
                                     <h4 className="text-sm font-semibold text-brand-primary truncate">
                                       {t.description || t.category}
@@ -358,8 +359,8 @@ export default function FinancePage() {
                                   `}>
                                     {t.type === 'income' ? '+' : '-'} {formatRupiah(Number(t.amount))}
                                   </span>
-                                  
-                                  <button 
+
+                                  <button
                                     onClick={() => handleDeleteTransaction(t.id)}
                                     className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-brand-danger transition-colors cursor-pointer"
                                   >
@@ -406,7 +407,7 @@ export default function FinancePage() {
                   <PieIcon size={16} className="text-brand-secondary" />
                   Alokasi Pengeluaran
                 </h4>
-                
+
                 <div className="h-[200px] w-full flex items-center justify-center">
                   {getCategoryBreakdown().length === 0 ? (
                     <div className="text-xs text-brand-muted align-center">Belum ada data pengeluaran terdaftar.</div>
@@ -450,9 +451,9 @@ export default function FinancePage() {
             value={form.type}
             onChange={(e) => {
               const newType = e.target.value
-              setForm({ 
-                ...form, 
-                type: newType, 
+              setForm({
+                ...form,
+                type: newType,
                 category: newType === 'income' ? 'Gaji' : 'Makanan'
               })
             }}

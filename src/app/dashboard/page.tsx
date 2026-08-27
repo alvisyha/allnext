@@ -63,8 +63,9 @@ export default function DashboardPage() {
     ],
     expense: [
       { value: 'Makanan', label: 'Makanan' },
-      { value: 'Transport', label: 'Transport' },
+      { value: 'Bensin', label: 'Bensin' },
       { value: 'Belanja', label: 'Belanja' },
+      { value: 'Online', label: 'Online' },
       { value: 'Tagihan', label: 'Tagihan' },
       { value: 'Hiburan', label: 'Hiburan' },
       { value: 'Lainnya', label: 'Lainnya' }
