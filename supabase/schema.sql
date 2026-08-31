@@ -79,6 +79,21 @@ CREATE TABLE events (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Wishlists
+CREATE TABLE wishlists (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  price NUMERIC,
+  priority TEXT CHECK (priority IN ('low', 'medium', 'high')) DEFAULT 'medium',
+  category TEXT DEFAULT 'lainnya',
+  image_url TEXT,
+  notes TEXT,
+  link_url TEXT,
+  is_purchased BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ================================================
 -- Row Level Security
 -- ================================================
@@ -90,6 +105,7 @@ ALTER TABLE habits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE habit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wishlists ENABLE ROW LEVEL SECURITY;
 
 -- Policies
 CREATE POLICY "Users manage own profile" ON profiles
@@ -118,6 +134,10 @@ CREATE POLICY "Users manage own transactions" ON transactions
   WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users manage own events" ON events
+  FOR ALL USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users manage own wishlists" ON wishlists
   FOR ALL USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 

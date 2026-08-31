@@ -9,6 +9,7 @@ import {
   Flame,
   Wallet,
   Calendar,
+  Heart,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -31,6 +32,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { name: 'Keuangan', href: '/dashboard/finance', icon: Wallet },
     { name: 'Planner & Kalender', href: '/dashboard/planner', icon: Calendar },
     { name: 'Habit Tracker', href: '/dashboard/habits', icon: Flame },
+    { name: 'Wishlist', href: '/dashboard/wishlist', icon: Heart },
   ]
 
   const handleLogout = async () => {
