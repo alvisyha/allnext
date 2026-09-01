@@ -94,6 +94,23 @@ CREATE TABLE wishlists (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Official Travels (Perjalanan Dinas / SPPD)
+CREATE TABLE official_travels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  sppd_number TEXT,
+  destination TEXT NOT NULL,
+  purpose TEXT,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  transportation TEXT DEFAULT 'Pesawat',
+  allowance_amount BIGINT DEFAULT 0,
+  status TEXT CHECK (status IN ('completed', 'ongoing', 'planned', 'cancelled')) DEFAULT 'completed',
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ================================================
 -- Row Level Security
 -- ================================================
@@ -106,6 +123,7 @@ ALTER TABLE habit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE wishlists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE official_travels ENABLE ROW LEVEL SECURITY;
 
 -- Policies
 CREATE POLICY "Users manage own profile" ON profiles
@@ -138,6 +156,10 @@ CREATE POLICY "Users manage own events" ON events
   WITH CHECK (auth.uid() = user_id);
 
 CREATE POLICY "Users manage own wishlists" ON wishlists
+  FOR ALL USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users manage own official_travels" ON official_travels
   FOR ALL USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 

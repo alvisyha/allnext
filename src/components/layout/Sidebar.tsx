@@ -10,6 +10,7 @@ import {
   Wallet,
   Calendar,
   Heart,
+  Plane,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -33,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, setIsOpen }) => {
     { name: 'Planner & Kalender', href: '/dashboard/planner', icon: Calendar },
     { name: 'Habit Tracker', href: '/dashboard/habits', icon: Flame },
     { name: 'Wishlist', href: '/dashboard/wishlist', icon: Heart },
+    { name: 'Riwayat Perdin', href: '/dashboard/perdin', icon: Plane },
   ]
 
   const handleLogout = async () => {
