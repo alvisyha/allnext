@@ -454,7 +454,8 @@ export default function OfficialTravelHistoryPage() {
                   { value: 'all', label: 'Semua Transportasi' },
                   { value: 'Pesawat', label: '✈️ Pesawat' },
                   { value: 'Kereta', label: '🚆 Kereta' },
-                  { value: 'Mobil Dinas', label: '🚗 Mobil Dinas' },
+                  { value: 'Mobil Dinas', label: '🏍️ Mobil Dinas' },
+                  { value: 'Kendaraan Pribadi', label: '🚗 Kendaraan Pribadi' },
                   { value: 'Travel', label: '🚌 Travel' },
                   { value: 'Kapal', label: '🚢 Kapal' },
                   { value: 'Lainnya', label: '🧭 Lainnya' }
@@ -555,7 +556,7 @@ export default function OfficialTravelHistoryPage() {
                   <div className="grid grid-cols-2 gap-2 text-xs mb-4">
                     <div className="flex flex-col bg-neutral-50/80 p-2.5 rounded-xl border border-neutral-100">
                       <span className="text-[10px] uppercase font-bold text-brand-muted flex items-center gap-1 mb-0.5">
-                        <Calendar size= {11} /> Tanggal & Durasi
+                        <Calendar size={11} /> Tanggal & Durasi
                       </span>
                       <span className="font-semibold text-brand-primary">
                         {format(parseISO(travel.start_date), 'dd MMM yyyy')}
@@ -622,10 +623,10 @@ export default function OfficialTravelHistoryPage() {
       >
         <form onSubmit={handleSave} className="flex flex-col gap-4 text-left">
           <Input
-            label="Judul Perjalanan Dinas / Agenda"
+            label="Judul Perjalanan Dinas"
             value={form.title}
             onChange={e => setForm({ ...form, title: e.target.value })}
-            placeholder="Contoh: Audit Operasional Cabang Surabaya"
+            placeholder="Judul Perjalanan Dinas"
             required
           />
 
@@ -634,13 +635,13 @@ export default function OfficialTravelHistoryPage() {
               label="Nomor SPPD / Surat Tugas"
               value={form.sppd_number}
               onChange={e => setForm({ ...form, sppd_number: e.target.value })}
-              placeholder="Contoh: SPPD/2026/08/042"
+              placeholder="1/KU.03.2-SPt/3279/2025"
             />
             <Input
               label="Kota / Lokasi Tujuan"
               value={form.destination}
               onChange={e => setForm({ ...form, destination: e.target.value })}
-              placeholder="Contoh: Surabaya, Jawa Timur"
+              placeholder="Bandung, Jawa Barat"
               required
             />
           </div>
@@ -650,7 +651,7 @@ export default function OfficialTravelHistoryPage() {
             <textarea
               value={form.purpose}
               onChange={e => setForm({ ...form, purpose: e.target.value })}
-              placeholder="Jelaskan secara singkat maksud dan tujuan perjalanan dinas ini..."
+              placeholder="Maksud dan tujuan perjalanan dinas."
               rows={2}
               className="w-full px-4 py-2.5 rounded-xl border border-brand-border text-sm bg-neutral-50/50 focus:outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all duration-200 resize-none"
             />
@@ -677,11 +678,10 @@ export default function OfficialTravelHistoryPage() {
             <Select
               label="Moda Transportasi"
               options={[
+                { value: 'Mobil Dinas', label: '🚗 Mobil Dinas' },
+                { value: 'Kendaraan Pribadi', label: '🏍️ Kendaraan Pribadi' },
                 { value: 'Pesawat', label: '✈️ Pesawat' },
                 { value: 'Kereta', label: '🚆 Kereta' },
-                { value: 'Mobil Dinas', label: '🚗 Mobil Dinas' },
-                { value: 'Travel', label: '🚌 Travel' },
-                { value: 'Kapal', label: '🚢 Kapal' },
                 { value: 'Lainnya', label: '🧭 Lainnya' }
               ]}
               value={form.transportation}
@@ -692,7 +692,7 @@ export default function OfficialTravelHistoryPage() {
               type="number"
               value={form.allowance_amount}
               onChange={e => setForm({ ...form, allowance_amount: e.target.value })}
-              placeholder="Contoh: 3500000"
+              placeholder="Contoh: 150000"
             />
           </div>
 

@@ -17,7 +17,8 @@ import {
   FolderPlus,
   ArrowUpRight,
   ArrowDownLeft,
-  PieChart as PieIcon
+  PieChart as PieIcon,
+  RotateCcw
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -48,6 +49,9 @@ export default function FinancePage() {
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false)
+  const [resetConfirmText, setResetConfirmText] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
   const [form, setForm] = useState({
     type: 'expense',
     amount: '',
@@ -66,6 +70,7 @@ export default function FinancePage() {
     ],
     expense: [
       { value: 'Makanan', label: 'Makanan' },
+      { value: 'Minuman', label: 'Minuman' },
       { value: 'Bensin', label: 'Bensin' },
       { value: 'Belanja', label: 'Belanja' },
       { value: 'Online', label: 'Online' },
@@ -148,6 +153,25 @@ export default function FinancePage() {
     }
   }
 
+  const handleResetAll = async () => {
+    if (!user) return
+    // Accept "reset" or the user's email as confirmation
+    const valid = resetConfirmText === 'reset' || resetConfirmText === user.email
+    if (!valid) return
+    try {
+      setResetLoading(true)
+      const { error } = await supabase.from('transactions').delete().eq('user_id', user.id)
+      if (error) throw error
+      setTransactions([])
+      setIsResetModalOpen(false)
+      setResetConfirmText('')
+    } catch (err) {
+      alert('Gagal mereset transaksi. Silakan coba lagi.')
+    } finally {
+      setResetLoading(false)
+    }
+  }
+
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -214,9 +238,21 @@ export default function FinancePage() {
           <h2 className="text-xl font-bold text-brand-primary tracking-tight">Manajemen Finansial</h2>
           <p className="text-sm text-brand-muted mt-1">Pantau arus kas harian Anda, kelola pengeluaran, dan catat pemasukan Anda secara praktis.</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)} size="sm" className="self-end sm:self-start cursor-pointer">
-          <Plus size={16} className="mr-1.5" /> Catat Transaksi
-        </Button>
+        <div className="flex items-center gap-2 self-end sm:self-start">
+          {transactions.length > 0 && (
+            <Button
+              onClick={() => setIsResetModalOpen(true)}
+              variant="outline"
+              size="sm"
+              className="cursor-pointer text-brand-danger border-red-200 hover:bg-red-50"
+            >
+              <RotateCcw size={14} className="mr-1.5" /> Reset
+            </Button>
+          )}
+          <Button onClick={() => setIsModalOpen(true)} size="sm" className="cursor-pointer">
+            <Plus size={16} className="mr-1.5" /> Catat Transaksi
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -315,63 +351,80 @@ export default function FinancePage() {
                       })
                       const dateKeys = Object.keys(grouped)
 
-                      return dateKeys.map((dateKey, groupIdx) => (
-                        <div key={dateKey}>
-                          {/* Date separator */}
-                          {groupIdx > 0 && (
-                            <div className="border-t border-brand-border my-3" />
-                          )}
-                          {/* Date header */}
-                          <div className="flex items-center gap-2 mb-2 mt-1">
-                            <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wider">
-                              {format(new Date(dateKey), 'EEEE, dd MMMM yyyy')}
-                            </span>
-                            <div className="flex-1 h-px bg-brand-border/60" />
-                          </div>
-                          {/* Transaction items for this date */}
-                          <div className="flex flex-col gap-2">
-                            {grouped[dateKey].map((t) => (
-                              <div
-                                key={t.id}
-                                className="flex items-center justify-between p-4 rounded-xl border border-brand-border hover:bg-neutral-50/40 transition-colors text-left"
-                              >
-                                <div className="flex items-center gap-3.5 min-w-0">
-                                  {/* Indicator badge */}
-                                  <div className={`p-2.5 rounded-xl border shrink-0
+                      return dateKeys.map((dateKey, groupIdx) => {
+                        const dayItems = grouped[dateKey]
+                        const dayIncome = dayItems.filter((t: any) => t.type === 'income').reduce((a: number, c: any) => a + Number(c.amount), 0)
+                        const dayExpense = dayItems.filter((t: any) => t.type === 'expense').reduce((a: number, c: any) => a + Number(c.amount), 0)
+                        return (
+                          <div key={dateKey}>
+                            {/* Date separator */}
+                            {groupIdx > 0 && (
+                              <div className="border-t border-brand-border my-3" />
+                            )}
+                            {/* Date header with daily totals */}
+                            <div className="flex items-center gap-2 mb-2 mt-1 flex-wrap">
+                              <span className="text-[11px] font-semibold text-brand-muted uppercase tracking-wider">
+                                {format(new Date(dateKey), 'EEEE, dd MMMM yyyy')}
+                              </span>
+                              <div className="flex-1 h-px bg-brand-border/60" />
+                              <div className="flex items-center gap-2">
+                                {dayIncome > 0 && (
+                                  <span className="text-[10px] font-bold text-brand-success bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                                    +{formatRupiah(dayIncome)}
+                                  </span>
+                                )}
+                                {dayExpense > 0 && (
+                                  <span className="text-[10px] font-bold text-brand-danger bg-red-50 border border-red-100 px-2 py-0.5 rounded-full">
+                                    -{formatRupiah(dayExpense)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {/* Transaction items for this date */}
+                            <div className="flex flex-col gap-2">
+                              {dayItems.map((t: any) => (
+                                <div
+                                  key={t.id}
+                                  className="flex items-center justify-between p-4 rounded-xl border border-brand-border hover:bg-neutral-50/40 transition-colors text-left"
+                                >
+                                  <div className="flex items-center gap-3.5 min-w-0">
+                                    {/* Indicator badge */}
+                                    <div className={`p-2.5 rounded-xl border shrink-0
                                     ${t.type === 'income' ? 'bg-emerald-50 border-emerald-100 text-brand-success' : 'bg-red-50 border-red-100 text-brand-danger'}
                                   `}>
-                                    {t.type === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                                      {t.type === 'income' ? <ArrowDownLeft size={16} /> : <ArrowUpRight size={16} />}
+                                    </div>
+
+                                    <div className="min-w-0">
+                                      <h4 className="text-sm font-semibold text-brand-primary truncate">
+                                        {t.description || t.category}
+                                      </h4>
+                                      <span className="text-xs text-brand-muted mt-0.5 block">
+                                        {t.category}
+                                      </span>
+                                    </div>
                                   </div>
 
-                                  <div className="min-w-0">
-                                    <h4 className="text-sm font-semibold text-brand-primary truncate">
-                                      {t.description || t.category}
-                                    </h4>
-                                    <span className="text-xs text-brand-muted mt-0.5 block">
-                                      {t.category}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-4 shrink-0">
-                                  <span className={`text-sm font-bold
+                                  <div className="flex items-center gap-4 shrink-0">
+                                    <span className={`text-sm font-bold
                                     ${t.type === 'income' ? 'text-brand-success' : 'text-brand-danger'}
                                   `}>
-                                    {t.type === 'income' ? '+' : '-'} {formatRupiah(Number(t.amount))}
-                                  </span>
+                                      {t.type === 'income' ? '+' : '-'} {formatRupiah(Number(t.amount))}
+                                    </span>
 
-                                  <button
-                                    onClick={() => handleDeleteTransaction(t.id)}
-                                    className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-brand-danger transition-colors cursor-pointer"
-                                  >
-                                    <Trash2 size={14} />
-                                  </button>
+                                    <button
+                                      onClick={() => handleDeleteTransaction(t.id)}
+                                      className="p-1.5 rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-brand-danger transition-colors cursor-pointer"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        )
+                      })
                     })()}
                   </div>
                 )}
@@ -489,6 +542,39 @@ export default function FinancePage() {
           />
           <Button type="submit" className="w-full mt-2 cursor-pointer">Simpan Catatan</Button>
         </form>
+      </Modal>
+
+      {/* --- RESET CONFIRMATION MODAL --- */}
+      <Modal isOpen={isResetModalOpen} onClose={() => { setIsResetModalOpen(false); setResetConfirmText('') }} title="Reset Semua Transaksi">
+        <div className="flex flex-col gap-4 text-left">
+          <div className="p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-brand-danger">
+            ⚠️ Tindakan ini akan menghapus <strong>semua</strong> riwayat transaksi Anda secara permanen dan tidak dapat dibatalkan.
+          </div>
+          <p className="text-sm text-brand-muted">
+            Untuk mengonfirmasi, ketik <strong className="text-brand-primary">reset</strong> atau <strong className="text-brand-primary">email akun Anda</strong> di bawah ini.
+          </p>
+          <Input
+            value={resetConfirmText}
+            onChange={(e) => setResetConfirmText(e.target.value)}
+            placeholder='Ketik "reset" atau email akun Anda'
+          />
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1 cursor-pointer"
+              onClick={() => { setIsResetModalOpen(false); setResetConfirmText('') }}
+            >
+              Batal
+            </Button>
+            <Button
+              className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 text-white border-red-600"
+              onClick={handleResetAll}
+              disabled={resetLoading || (resetConfirmText !== 'reset' && resetConfirmText !== user?.email)}
+            >
+              {resetLoading ? 'Menghapus...' : 'Hapus Semua'}
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   )

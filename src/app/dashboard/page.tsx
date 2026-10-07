@@ -4,13 +4,15 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   CheckSquare,
-  Flame,
   Wallet,
   Calendar,
   Sparkles,
   ArrowUpRight,
   TrendingDown,
-  TrendingUp
+  TrendingUp,
+  Briefcase,
+  Circle,
+  CheckCircle2
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { StatsCard } from '@/components/dashboard/StatsCard'
@@ -22,6 +24,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
+import { Card } from '@/components/ui/Card'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -34,24 +37,28 @@ export default function DashboardPage() {
   // Dashboard indicators
   const [stats, setStats] = useState({
     activeTasks: 0,
-    habitsCompletedToday: 0,
+    perdinCount: 0,
     balance: 0,
     eventsToday: 0
   })
 
   const [chartData, setChartData] = useState<any[]>([])
 
+  // To-do list (active tasks)
+  const [activeTasks, setActiveTasks] = useState<any[]>([])
+
   // Modal control states
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false)
   const [isTxModalOpen, setIsTxModalOpen] = useState(false)
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
-  const [isHabitModalOpen, setIsHabitModalOpen] = useState(false)
+  const [isPerdinModalOpen, setIsPerdinModalOpen] = useState(false)
 
   // Form states
   const [taskForm, setTaskForm] = useState({ title: '', priority: 'medium', dueDate: '' })
   const [txForm, setTxForm] = useState({ type: 'expense', amount: '', category: 'Makanan', description: '' })
   const [eventForm, setEventForm] = useState({ title: '', date: '', startTime: '09:00', endTime: '10:00', type: 'work' })
-  const [habitForm, setHabitForm] = useState({ name: '', icon: '✅', color: '#6c63ff', target: '7' })
+  const defaultPerdinForm = { title: '', sppd_number: '', destination: '', purpose: '', start_date: '', end_date: '', transportation: 'Mobil Dinas', allowance_amount: '', notes: '' }
+  const [perdinForm, setPerdinForm] = useState(defaultPerdinForm)
 
   // Transaction category options
   const txCategories = {
@@ -63,6 +70,7 @@ export default function DashboardPage() {
     ],
     expense: [
       { value: 'Makanan', label: 'Makanan' },
+      { value: 'Minuman', label: 'Minuman' },
       { value: 'Bensin', label: 'Bensin' },
       { value: 'Belanja', label: 'Belanja' },
       { value: 'Online', label: 'Online' },
@@ -84,16 +92,24 @@ export default function DashboardPage() {
         .eq('user_id', userId)
         .eq('is_completed', false)
 
-      // 2. Fetch habits logged today
-      const todayStr = format(new Date(), 'yyyy-MM-dd')
-      const { data: habitLogsToday } = await supabase
-        .from('habit_logs')
-        .select('*, habits(user_id)')
-        .eq('completed_date', todayStr)
+      // 2. Fetch perdin count from localStorage
+      let perdinCount = 0
+      try {
+        const stored = localStorage.getItem('allnext_perdin_history')
+        if (stored) perdinCount = JSON.parse(stored).length
+      } catch {}
 
-      const loggedTodayCount = habitLogsToday?.filter(log => log.habits && log.habits.user_id === userId).length || 0
+      // 3. Fetch active tasks for to-do list
+      const { data: tasksData } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('is_completed', false)
+        .order('created_at', { ascending: false })
+        .limit(8)
+      setActiveTasks(tasksData || [])
 
-      // 3. Fetch net balance (income - expense)
+      // 4. Fetch net balance (income - expense)
       const { data: transactions } = await supabase
         .from('transactions')
         .select('*')
@@ -106,7 +122,7 @@ export default function DashboardPage() {
         balance = totalIncome - totalExpense
       }
 
-      // 4. Fetch events today
+      // 5. Fetch events today
       const startOfToday = startOfDay(new Date()).toISOString()
       const endOfToday = endOfDay(new Date()).toISOString()
       const { count: eventsTodayCount } = await supabase
@@ -118,7 +134,7 @@ export default function DashboardPage() {
 
       setStats({
         activeTasks: activeTasksCount || 0,
-        habitsCompletedToday: loggedTodayCount,
+        perdinCount,
         balance,
         eventsToday: eventsTodayCount || 0
       })
@@ -230,23 +246,36 @@ export default function DashboardPage() {
     }
   }
 
-  const handleCreateHabit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
     if (!user) return
     try {
-      const { error } = await supabase.from('habits').insert({
-        user_id: user.id,
-        name: habitForm.name,
-        icon: habitForm.icon,
-        color: habitForm.color,
-        target_per_week: Number(habitForm.target)
-      })
+      const { error } = await supabase.from('tasks').update({ is_completed: !currentStatus }).eq('id', taskId)
       if (error) throw error
-      setIsHabitModalOpen(false)
-      setHabitForm({ name: '', icon: '✅', color: '#6c63ff', target: '7' })
-      fetchDashboardData(user.id)
+      setActiveTasks(prev => prev.filter(t => t.id !== taskId))
+      setStats(prev => ({ ...prev, activeTasks: Math.max(0, prev.activeTasks - 1) }))
     } catch (err) {
-      alert('Gagal menyimpan kebiasaan baru.')
+      console.error('Failed to toggle task:', err)
+    }
+  }
+
+  const handleCreatePerdin = (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const stored = localStorage.getItem('allnext_perdin_history')
+      const existing = stored ? JSON.parse(stored) : []
+      const newEntry = {
+        id: crypto.randomUUID(),
+        ...perdinForm,
+        allowance_amount: Number(perdinForm.allowance_amount) || 0,
+        created_at: new Date().toISOString()
+      }
+      const updated = [newEntry, ...existing]
+      localStorage.setItem('allnext_perdin_history', JSON.stringify(updated))
+      setStats(prev => ({ ...prev, perdinCount: updated.length }))
+      setIsPerdinModalOpen(false)
+      setPerdinForm(defaultPerdinForm)
+    } catch (err) {
+      alert('Gagal menyimpan riwayat perdin.')
     }
   }
 
@@ -317,19 +346,70 @@ export default function DashboardPage() {
               quickActionLabel="Agenda Baru"
             />
             <StatsCard
-              title="Habit Hari Ini"
-              value={stats.habitsCompletedToday}
-              subtext="Sudah diceklis hari ini"
-              icon={<Flame size={20} />}
+              title="Total Perdin"
+              value={stats.perdinCount}
+              subtext="Riwayat perjalanan dinas"
+              icon={<Briefcase size={20} />}
               variant="warning"
-              onQuickAction={() => setIsHabitModalOpen(true)}
-              quickActionLabel="Kebiasaan Baru"
+              onQuickAction={() => setIsPerdinModalOpen(true)}
+              quickActionLabel="Catat Perdin"
             />
           </div>
 
-          {/* Calendar Section */}
-          <div>
-            <MiniCalendar />
+          {/* Calendar + To-Do List */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+              <MiniCalendar />
+            </div>
+
+            {/* To-Do List */}
+            <Card className="p-5 flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold text-sm text-brand-primary flex items-center gap-2">
+                  <CheckSquare size={16} className="text-brand-secondary" />
+                  To-Do List
+                </h3>
+                <button
+                  onClick={() => setIsTaskModalOpen(true)}
+                  className="text-[10px] font-semibold text-brand-secondary hover:underline cursor-pointer"
+                >
+                  + Tambah
+                </button>
+              </div>
+              {activeTasks.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-center py-8">
+                  <p className="text-xs text-brand-muted">Tidak ada tugas aktif. 🎉</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5 overflow-y-auto max-h-[320px]">
+                  {activeTasks.map(task => {
+                    const priorityColors: Record<string, string> = {
+                      high: 'text-brand-danger',
+                      medium: 'text-brand-warning',
+                      low: 'text-brand-success'
+                    }
+                    return (
+                      <button
+                        key={task.id}
+                        onClick={() => handleToggleTask(task.id, task.is_completed)}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-brand-border hover:bg-neutral-50/60 transition-colors text-left cursor-pointer group"
+                      >
+                        <Circle size={16} className="text-neutral-300 group-hover:text-brand-secondary shrink-0 transition-colors" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-brand-primary truncate">{task.title}</p>
+                          {task.due_date && (
+                            <span className="text-[10px] text-brand-muted">
+                              Tenggat: {format(new Date(task.due_date), 'dd MMM yyyy')}
+                            </span>
+                          )}
+                        </div>
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${priorityColors[task.priority] || 'text-brand-muted'} bg-current`} />
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </Card>
           </div>
 
           {/* Arus Kas section */}
@@ -371,50 +451,7 @@ export default function DashboardPage() {
         </form>
       </Modal>
 
-      {/* ================================================
-          2. MODAL KEBIASAAN BARU (Habit Modal)
-          ================================================ */}
-      <Modal isOpen={isHabitModalOpen} onClose={() => setIsHabitModalOpen(false)} title="Buat Kebiasaan Baru">
-        <form onSubmit={handleCreateHabit} className="flex flex-col gap-4 text-left">
-          <Input
-            label="Nama Kebiasaan"
-            value={habitForm.name}
-            onChange={(e) => setHabitForm({ ...habitForm, name: e.target.value })}
-            placeholder="Contoh: Olahraga Pagi, Membaca Buku"
-            required
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Icon / Emoji"
-              value={habitForm.icon}
-              onChange={(e) => setHabitForm({ ...habitForm, icon: e.target.value })}
-              placeholder="Contoh: 🏃‍♂️, 📚, 💧"
-              required
-            />
-            <Select
-              label="Target per Minggu"
-              options={[
-                { value: '1', label: '1 Hari' },
-                { value: '2', label: '2 Hari' },
-                { value: '3', label: '3 Hari' },
-                { value: '4', label: '4 Hari' },
-                { value: '5', label: '5 Hari' },
-                { value: '6', label: '6 Hari' },
-                { value: '7', label: '7 Hari' }
-              ]}
-              value={habitForm.target}
-              onChange={(e) => setHabitForm({ ...habitForm, target: e.target.value })}
-            />
-          </div>
-          <Input
-            label="Warna Tag (Hex)"
-            type="color"
-            value={habitForm.color}
-            onChange={(e) => setHabitForm({ ...habitForm, color: e.target.value })}
-          />
-          <Button type="submit" className="w-full mt-2 cursor-pointer">Mulai Kebiasaan</Button>
-        </form>
-      </Modal>
+
 
       {/* ================================================
           3. MODAL CATAT KEUANGAN (Transaction Modal)
@@ -507,6 +544,74 @@ export default function DashboardPage() {
             onChange={(e) => setEventForm({ ...eventForm, type: e.target.value })}
           />
           <Button type="submit" className="w-full mt-2 cursor-pointer">Jadwalkan</Button>
+        </form>
+      </Modal>
+
+      {/* ================================================
+          5. MODAL CATAT PERDIN (Perdin Modal)
+          ================================================ */}
+      <Modal isOpen={isPerdinModalOpen} onClose={() => setIsPerdinModalOpen(false)} title="Catat Riwayat Perjalanan Dinas">
+        <form onSubmit={handleCreatePerdin} className="flex flex-col gap-4 text-left">
+          <Input
+            label="Judul Perjalanan Dinas"
+            value={perdinForm.title}
+            onChange={(e) => setPerdinForm({ ...perdinForm, title: e.target.value })}
+            placeholder="Judul Perjalanan Dinas"
+            required
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Nomor SPPD"
+              value={perdinForm.sppd_number}
+              onChange={(e) => setPerdinForm({ ...perdinForm, sppd_number: e.target.value })}
+              placeholder="1/KU.03.2-SPt/3279/2025"
+            />
+            <Input
+              label="Kota / Lokasi Tujuan"
+              value={perdinForm.destination}
+              onChange={(e) => setPerdinForm({ ...perdinForm, destination: e.target.value })}
+              placeholder="Bandung, Jawa Barat"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Tanggal Berangkat"
+              type="date"
+              value={perdinForm.start_date}
+              onChange={(e) => setPerdinForm({ ...perdinForm, start_date: e.target.value })}
+              required
+            />
+            <Input
+              label="Tanggal Kembali"
+              type="date"
+              value={perdinForm.end_date}
+              onChange={(e) => setPerdinForm({ ...perdinForm, end_date: e.target.value })}
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Select
+              label="Moda Transportasi"
+              options={[
+                { value: 'Mobil Dinas', label: '🚗 Mobil Dinas' },
+                { value: 'Kendaraan Pribadi', label: '🏍️ Kendaraan Pribadi' },
+                { value: 'Pesawat', label: '✈️ Pesawat' },
+                { value: 'Kereta', label: '🚆 Kereta' },
+                { value: 'Lainnya', label: '🧭 Lainnya' }
+              ]}
+              value={perdinForm.transportation}
+              onChange={(e) => setPerdinForm({ ...perdinForm, transportation: e.target.value })}
+            />
+            <Input
+              label="Biaya / Uang Saku (Rp)"
+              type="number"
+              value={perdinForm.allowance_amount}
+              onChange={(e) => setPerdinForm({ ...perdinForm, allowance_amount: e.target.value })}
+              placeholder="Contoh: 150000"
+            />
+          </div>
+          <Button type="submit" className="w-full mt-2 cursor-pointer">Simpan Riwayat Perdin</Button>
         </form>
       </Modal>
     </div>
