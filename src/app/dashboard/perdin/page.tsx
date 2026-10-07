@@ -179,7 +179,7 @@ export default function OfficialTravelHistoryPage() {
     if (userId) {
       try {
         const { data, error } = await supabase
-          .from('official_travels')
+          .from('perdin_history')
           .select('*')
           .eq('user_id', userId)
           .order('start_date', { ascending: false })
@@ -290,7 +290,7 @@ export default function OfficialTravelHistoryPage() {
 
       if (user) {
         try {
-          await supabase.from('official_travels').update(payload).eq('id', editingTravel.id)
+          await supabase.from('perdin_history').update(payload).eq('id', editingTravel.id)
         } catch (err) {
           console.error('Error updating travel in Supabase', err)
         }
@@ -309,7 +309,7 @@ export default function OfficialTravelHistoryPage() {
 
       if (user) {
         try {
-          const { data } = await supabase.from('official_travels').insert({
+          const { data } = await supabase.from('perdin_history').insert({
             user_id: user.id,
             ...payload
           }).select()
@@ -336,7 +336,7 @@ export default function OfficialTravelHistoryPage() {
 
     if (user) {
       try {
-        await supabase.from('official_travels').delete().eq('id', id)
+        await supabase.from('perdin_history').delete().eq('id', id)
       } catch (err) {
         console.error('Error deleting travel from Supabase', err)
       }

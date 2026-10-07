@@ -92,12 +92,28 @@ export default function DashboardPage() {
         .eq('user_id', userId)
         .eq('is_completed', false)
 
-      // 2. Fetch perdin count from localStorage
+      // 2. Fetch perdin count from Supabase perdin_history (fallback to localStorage if error/offline)
       let perdinCount = 0
-      try {
-        const stored = localStorage.getItem('allnext_perdin_history')
-        if (stored) perdinCount = JSON.parse(stored).length
-      } catch {}
+      if (userId) {
+        const { count: dbPerdinCount, error: perdinErr } = await supabase
+          .from('perdin_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+
+        if (!perdinErr && dbPerdinCount !== null) {
+          perdinCount = dbPerdinCount
+        } else {
+          try {
+            const stored = localStorage.getItem('allnext_perdin_history')
+            if (stored) perdinCount = JSON.parse(stored).length
+          } catch {}
+        }
+      } else {
+        try {
+          const stored = localStorage.getItem('allnext_perdin_history')
+          if (stored) perdinCount = JSON.parse(stored).length
+        } catch {}
+      }
 
       // 3. Fetch active tasks for to-do list
       const { data: tasksData } = await supabase
@@ -258,20 +274,51 @@ export default function DashboardPage() {
     }
   }
 
-  const handleCreatePerdin = (e: React.FormEvent) => {
+  const handleCreatePerdin = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
+      const payload = {
+        title: perdinForm.title,
+        sppd_number: perdinForm.sppd_number || `SPPD/${format(new Date(), 'yyyy/MM')}/${Math.floor(100 + Math.random() * 900)}`,
+        destination: perdinForm.destination,
+        purpose: perdinForm.purpose,
+        start_date: perdinForm.start_date,
+        end_date: perdinForm.end_date,
+        transportation: perdinForm.transportation,
+        allowance_amount: Number(perdinForm.allowance_amount) || 0,
+        notes: perdinForm.notes
+      }
+
+      if (user) {
+        const { error } = await supabase.from('perdin_history').insert({
+          user_id: user.id,
+          ...payload
+        })
+        if (error) console.error('Failed to insert perdin to Supabase:', error)
+      }
+
+      // Sync to local storage
       const stored = localStorage.getItem('allnext_perdin_history')
       const existing = stored ? JSON.parse(stored) : []
       const newEntry = {
         id: crypto.randomUUID(),
-        ...perdinForm,
-        allowance_amount: Number(perdinForm.allowance_amount) || 0,
+        user_id: user?.id,
+        ...payload,
         created_at: new Date().toISOString()
       }
       const updated = [newEntry, ...existing]
       localStorage.setItem('allnext_perdin_history', JSON.stringify(updated))
-      setStats(prev => ({ ...prev, perdinCount: updated.length }))
+
+      if (user) {
+        const { count } = await supabase
+          .from('perdin_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+        if (count !== null) setStats(prev => ({ ...prev, perdinCount: count }))
+      } else {
+        setStats(prev => ({ ...prev, perdinCount: updated.length }))
+      }
+
       setIsPerdinModalOpen(false)
       setPerdinForm(defaultPerdinForm)
     } catch (err) {
